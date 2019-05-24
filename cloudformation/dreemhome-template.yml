@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: >
+  This is the main dreemhome stack template which all others will be included.
+  This stack will create the ECS cluster, Service, Loadbalancer and lambda functions
+  needed.
+
+Parameters:
+  LaunchType:
+    Type: String
+    Default: EC2
+    AllowedValues:
+      - Fargate
+      - EC2
+    Description: >
+      The launch type for your service. Selecting EC2 will create an Auto
+      Scaling group of t2.micro instances for your cluster. See
+      https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html
+      to learn more about launch types.
+
+  TemplateBucket:
+    Type: String
+    Description: >
+      The S3 bucket from which to fetch the templates used by this stack.
+
+  EcrRepositoryNamespace:
+    Type: String
+    Description: The namespace of the Elastic Container Repo
+
+  EcrRepositoryArn:
+    Type: String
+    Description: The Arn of the Elastic Container Repo
+
+  ApplicationEnv:
+    Type: String
+    Description: The environment to start the Application in
+    Default: production
+
+  ServiceName:
+    Type: String
+    Default: dreemhome-api-service
+
+  ApplicationImageTag:
+    Type: String
+    Description: The commit hash of the Ecr image or latest for the latest
+    Default: latest
+
+  ApplicationImageId:
+    Type: String
+    Description: ECS Amazon Machine Image (AMI) ID
+
+Resources:
+  S3:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/s3.yml"
+
+  Secrets:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/secrets.yml"
+      Parameters:
+        StackName: !Ref AWS::StackName
+
+  Cluster:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/cluster.yml"
+      Parameters:
+        StackName: !Ref AWS::StackName
+        Subnets: !GetAtt VPC.Outputs.Subnets
+        VpcId: !GetAtt VPC.Outputs.VpcId
+        ApplicationImageId: !Ref ApplicationImageId
+
+  LoadBalancer:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/load-balancer.yml"
+      Parameters:
+        Subnets: !GetAtt VPC.Outputs.Subnets
+        VpcId: !GetAtt VPC.Outputs.VpcId
+        AutoScalingSecurityGroup: !GetAtt Cluster.Outputs.AutoScalingSecurityGroup
+        StackName: !Ref AWS::StackName
+
+  VPC:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/vpc.yml"
+      Parameters:
+        Name: !Ref AWS::StackName
+        VpcCIDR: 10.215.0.0/16
+        Subnet1CIDR: 10.215.10.0/24
+        Subnet2CIDR: 10.215.20.0/24
+
+  Database:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/datatbase.yml"
+      Parameters:
+        DatabasePassword: !GetAtt Secrets.Outputs.DatabasePassword
+        Subnets: !GetAtt VPC.Outputs.Subnets
+        VpcId: !GetAtt VPC.Outputs.VpcId
+        AutoScalingSecurityGroup: !GetAtt Cluster.Outputs.AutoScalingSecurityGroup
+        StackName: !Ref AWS::StackName
+
+  TaskDefinitions:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/task-definitions.yml"
+      Parameters:
+        ApplicationEnv: !Ref ApplicationEnv
+        ApplicationImageTag: !Ref ApplicationImageTag
+        ClusterName: !GetAtt Cluster.Outputs.ClusterName
+        ClusterArn: !GetAtt Cluster.Outputs.ClusterArn
+        DatabaseAddress: !GetAtt Database.Outputs.DatabaseAddress
+        EcrRepositoryNamespace: !Ref EcrRepositoryNamespace
+        StackName: !Ref AWS::StackName
+
+  Service:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/service.yml"
+      Parameters:
+        StackName: !Ref AWS::StackName
+        ServiceName: !Ref ServiceName
+        ClusterName: !GetAtt Cluster.Outputs.ClusterName
+        ClusterArn: !GetAtt Cluster.Outputs.ClusterArn
+        MigrateTaskArn: !GetAtt TaskDefinitions.Outputs.MigrateTaskArn
+        ApplicationLogGroupName: !GetAtt Cluster.Outputs.ApplicationLogGroupName
+        LoadBalancerHttpListener: !GetAtt LoadBalancer.Outputs.LoadBalancerHttpListenerArn
+        ApplicationTaskDefinitionArn: !GetAtt TaskDefinitions.Outputs.ApplicationTaskDefinitionArn
+        TargetGroupArn: !GetAtt LoadBalancer.Outputs.TargetGroupArn
+
+Outputs:
+  ServiceUrl:
+    Description: The sample service that is being continuously deployed.
+    Value: !GetAtt LoadBalancer.Outputs.ServiceUrl
+

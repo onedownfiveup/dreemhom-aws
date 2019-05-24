@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: dreemhome API
+
+Parameters:
+  ServiceName:
+    Type: String
+
+  ClusterName:
+    Type: String
+
+  ClusterArn:
+    Type: String
+
+  MigrateTaskArn:
+    Type: String
+
+  ApplicationLogGroupName:
+    Type: String
+
+  LoadBalancerHttpListener:
+    Type: String
+
+  ApplicationTaskDefinitionArn:
+    Type: String
+
+  TargetGroupArn:
+    Type: String
+
+  DesiredCount:
+    Type: Number
+    Default: 1
+
+  StackName:
+    Type: String
+
+Resources:
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Ref ServiceName
+      TaskDefinition: !Ref ApplicationTaskDefinitionArn
+      Cluster: !Ref ClusterName
+      DesiredCount: !Ref DesiredCount
+      LoadBalancers:
+        - ContainerName: dreemhome-api
+          ContainerPort: 8000
+          TargetGroupArn: !Ref TargetGroupArn
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+
+Outputs:
+  Service:
+    Value: !Ref Service
