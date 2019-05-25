@@ -1,30 +1,3 @@
-# AWS dev ops repository (Infrastructure as code)
-
-
-![Continous integration/Deployment diagram](https://github.com/onedownfiveup/dreemhome-aws/blob/master/dreemhome_API_continous_deployment_cloudformation_stack.png "Logo Title Text 1")
-
-## What is in the box?
-This repository contains the code to build the infrastructure for the dreemhome API. The repository has 2 folders:
-
-* packer - This directory contains the files and setup for building your base AMI for your ecs task definitions
-* cloudformation - This directory contains the cloudformation stack templates for building the AWS infrastrucutre.
-
-The code for this repository was inspired by reading: [Docker on Amazon Web Services](http://a.co/d/hvu7Bx1) and also using
-the [awslabs/ecs-refarch-continuous-deployment](https://github.com/awslabs/ecs-refarch-continuous-deployment) as a resource
-for splitting out templates and building the CodePipeline stack.
-
-
-## Why did we need this?
-
-I am not a dev ops engineer and my days of hacking on linux boxes to configure my workspace are behind me. I found myself hacking
-together a production environment and having to google along the way on setting up permissions, ec2 instances, Vpcs, subnets
-etc.. and if you asked me to build it again I probably would have to research everything again as I am a developer and I do
-not do dev ops on a daily basis.
-
-Furthermore all the information about how to set up the production environment is mostly in my head and scattered in random
-confluence docs. If someone were to need to replicate it in the future or my future self forgets they will have to reverse
-engineer what is currently in place. Not ideal.
-
 ## How to use
 
 ### Pre requisites
@@ -81,7 +54,7 @@ task.
 Once you have done the above you can run `make upload-stacks`
 
 #### Create the AWS stacks
-You can simply run `make deploy/dev` and this will deploy all the stacks using
+You can simply run `make deploy/dev` and this will deploy all the stacks using the dev environment defined in dev.json. If you want to create multiple environments then define a file called <environment.json> and run `make deploy/environment`
 
 At this point assuming you have changed the GiuthubRepo configuration to the configuration you have specified you should be
 able to push your app and have the build trigger and deploy the updated code.
