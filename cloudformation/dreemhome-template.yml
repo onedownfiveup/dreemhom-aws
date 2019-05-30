@@ -49,6 +49,10 @@ Parameters:
     Type: String
     Description: ECS Amazon Machine Image (AMI) ID
 
+  CorsHost:
+    Type: String
+    Description: The CORS host to be allowed for CORS Access control
+
 Resources:
   Secrets:
     Type: AWS::CloudFormation::Stack
@@ -110,6 +114,7 @@ Resources:
         DatabaseAddress: !GetAtt Database.Outputs.DatabaseAddress
         EcrRepositoryNamespace: !Ref EcrRepositoryNamespace
         StackName: !Ref AWS::StackName
+        CorsHost: !Ref CorsHost
 
   Service:
     Type: AWS::CloudFormation::Stack

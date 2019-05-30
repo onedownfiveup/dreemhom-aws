@@ -24,6 +24,10 @@ Parameters:
   StackName:
     Type: String
 
+  CorsHost:
+    Type: String
+    Description: The CORS host to be allowed for CORS Access control
+
 Resources:
   ApplicationTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -43,6 +47,8 @@ Resources:
             - SourceVolume: public
               ContainerPath: /public
           Environment:
+            - Name: CORS_HOST
+              Value: !Ref CorsHost
             - Name: APP_ENV
               Value: !Ref ApplicationEnv
             - Name: DATABASE_HOST
@@ -115,6 +121,8 @@ Resources:
           MemoryReservation: 5
           Cpu: 5
           Environment:
+            - Name: CORS_HOST
+              Value: !Ref CorsHost
             - Name: APP_ENV
               Value: !Ref ApplicationEnv
             - Name: DATABASE_HOST
