@@ -50,11 +50,6 @@ Parameters:
     Description: ECS Amazon Machine Image (AMI) ID
 
 Resources:
-  S3:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/s3.yml"
-
   Secrets:
     Type: AWS::CloudFormation::Stack
     Properties:
