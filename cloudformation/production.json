@@ -4,6 +4,7 @@
     "TemplateBucket": "dreemhome-cloudformation-templates",
     "EcrRepositoryNamespace": "dreemhome/dreemhome-api",
     "EcrRepositoryArn": "arn:aws:ecr:us-east-1:817229443135:repository/dreemhome/dreemhome-api",
-    "ApplicationImageId": "ami-0ef33e3dd743c3f9a"
+    "ApplicationImageId": "ami-0ef33e3dd743c3f9a",
+    "ApplicationImageTag": "44d832b"
   }
 }
